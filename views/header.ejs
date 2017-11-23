@@ -20,11 +20,33 @@
             </div>
             <a class="navbar-brand" href="/">首页</a>
             <ul class="nav navbar-nav navbar-right">
+                <% if(user){ %>
+                <li><a title="发表文章" href="/post">发表文章</a></li>
+                <li><a href="/logout"><span class="glyphicon glyphicon-log-out"></span>登出</a></li>
+                <%}else{%>
                 <li><a href="/reg"><span class="glyphicon glyphicon-user"></span> 注册</a></li>
                 <li><a href="/login"><span class="glyphicon glyphicon-log-in"></span> 登录</a></li>
+                <%}%>
             </ul>
         </div>
     </div>
 </nav>
 <div class="container">
+    <div>
+        <% if(success) { %>
+        <%= success%>
+        <% } else { %>
+        <%= error %>
+        <% } %>
+        <h3><%= title %></h3>
+        <div class="userArea">
+            <% if(user) {%>
+            <span>用户：<%= user.username %></span>
+            <% } else { %>
+            <span>用户：游客</span>
+            <% } %>
+        </div>
+    </div>
+    <hr />
+    <hr />
     <div class="col-sm-12">
