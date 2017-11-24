@@ -16,5 +16,5 @@ var PostSchema = new mongoose.Schema({
 });
 
 //这里会数据库会创建一个users集合
-var Post = mongoose.model('Post', UserSchema);
+var Post = mongoose.model('Post', PostSchema);
 module.exports = Post;
