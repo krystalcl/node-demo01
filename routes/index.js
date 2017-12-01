@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var path= require('path');
+var markdown = require("markdown").markdown;
 var User = require('./../models/user.model');
 var Post = require('./../models/post.model');
 var moment = require('moment');//时间控件
@@ -14,6 +15,7 @@ module.exports = function(app) {
                 req.flash('error','查找错误');
                 return res.redirect('/');
             }
+            console.log("index-req",req.session.user);
             res.render('index',{
                 title:'首页',
                 user: req.session.user,
@@ -37,7 +39,7 @@ module.exports = function(app) {
         });
     });
     //文章发表
-    app.get('/post',function (req, res) {
+    app.get('/post',checkLogin,function (req, res) {
         res.render('post',{
             title:'发表',
             user: req.session.user,
@@ -53,7 +55,7 @@ module.exports = function(app) {
     });
 
     //展示文章
-    app.get('/detail',function(req,res,next){
+    app.get('/detail',checkLogin,function(req,res,next){
         var id = req.query.id;
         if(id && id!=''){
             Post.update({"_id":id},{$inc:{"pv":1}},function(err){
@@ -82,8 +84,43 @@ module.exports = function(app) {
         }
     });
 
+    app.get('/edit/:author/:title',checkLogin, function (req, res) {
+        var id = req.query.id;
+        Post.findById(id, function (err, data) {
+            //console.log(data);
+            if (err) {
+                req.flash('error', err);
+                return res.redirect('back');
+            }
+            res.render('edit', {
+                title: '编辑',
+                post: data,
+                user: req.session.user,
+                success: req.flash('success').toString(),
+                error: req.flash('error').toString()
+            });
+        });
+    });
+
+    app.get('/delete',function(req,res){
+        var id = req.query.id;
+        console.log("index-delete-req.query",req.query);
+        console.log(id);
+        if(id && id!=''){
+            Post.findByIdAndRemove(id,function(err){
+                if(err){
+                    console.log(err);
+                    req.flash("success","删除文章失败");
+                    return req.redirect('/')
+                }
+                req.flash("success","删除文章成功");
+                res.redirect('/');
+            })
+        }
+    });
+
     //来自/reg的post请求
-    app.post('/reg', function (req, res) {
+    app.post('/reg',checkLogin, function (req, res) {
         var user = new User({
             username:req.body.username,
             password:req.body.password,
@@ -120,9 +157,11 @@ module.exports = function(app) {
             }
         })
     });
-    app.post('/login',function (req, res) {
+    app.post('/login',checkLogin,function (req, res) {
         var password = req.body.password;
         //检查用户是否存在
+        console.log("req.body",req.body);
+        console.log("index-user",User);
         User.findOne({'username':req.body.username},function(err,user){
             if(err){
                 console.log('error','err');
@@ -143,13 +182,14 @@ module.exports = function(app) {
             }
 
             req.session.user = user;
+            console.log(req.session);
             console.log(user.username);
             req.flash('success','登录成功');
             res.redirect('/');
         });
     });
 
-    app.post('/post',function(req,res){
+    app.post('/post',checkLogin,function(req,res){
         // debugger
         var imgPath = path.dirname(__dirname) + '/public/images/';
         var form = new formidable.IncomingForm(); //创建上传表单
@@ -208,5 +248,45 @@ module.exports = function(app) {
             });
         });
     });
+
+    app.post("/edit/:author/:title",checkLogin,function(req,res,next){
+        var post = {
+            id:req.body.id,
+            author:req.session.user,
+            title:req.body.title,
+            article:req.body.article
+        };
+
+        console.log(post);
+
+        //markdow转格式文章
+        post.article = markdown.toHTML(post.article);
+
+
+        Post.update({"_id":post.id},{$set:{title:post.title,article:post.article}},function(err){
+            if(err){
+                console.log(err);
+                return;
+            }
+            console.log("更新成功");
+            res.redirect("/");
+        });
+    });
+
+    //检测是否登录
+    function checkLogin(req,res,next){
+        if(!req.session.user){
+            req.flash('error','未登录，请您先登录');
+            return res.redirect('/detail'+id);
+        }
+        next();
+    }
+    function checkNoLogin(req,res,next){
+        if(req.session.user){
+            req.flash('error','已登录，无需再登录');
+            return res.redirect('back');
+        }
+        next();
+    }
 }
 

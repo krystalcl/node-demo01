@@ -1,13 +1,8 @@
 <%- include header %>
-
-<%if(user){%>
-<%if(user.username == post.author){%>
 <p>
-    <span><a class="edit" href="#">编辑</a></span>
-    <span><a class="edit" href="#">删除</a></span>
+    <span><a class="edit" href="/edit/<%= post.author %>/<%= post.title %>?id=<%=post._id%>">编辑</a></span>
+    <span><a class="edit" href="/delete?id=<%= post._id%>">删除</a></span>
 </p>
-<%}%>
-<%}%>
 <p><h2><a href="#"><%= post.title %></a></h2></p>
 <p class="info">
     作者：<a href="#"><%= post.author %></a> |
@@ -15,7 +10,6 @@
     浏览：<%= post.pv%>
 </p>
 <p><%- post.article %></p>
-
 <%if(post.postImg) { %>
 <img src="/images/<%= post.postImg%>" alt="" style="width:100%;height:100%;">
 <% } %>
